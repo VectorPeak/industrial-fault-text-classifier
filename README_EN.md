@@ -58,30 +58,102 @@ The label schema is stored in [configs/labels.json](configs/labels.json), coveri
 
 ---
 
-## 0x03. Model And Technical Route
+## 0x03. Model And Technical Selection Process
 
-The repository keeps two modeling routes:
+### 3.1 Stage 1: Limits Of Rule-Based Dispatch
 
-| Route | Role | Notes |
-|-------|------|-------|
-| Lightweight baseline | Fast engineering smoke test | Character n-gram multi-task Naive Bayes, no GPU required |
-| BERT multi-task model | Formal semantic modeling | Shared Chinese BERT encoder with three classification heads; training entry is retained |
+The initial idea was to classify repair text with keyword dictionaries, fault phrases, and department mapping rules. For example, terms such as bearing, vibration, or temperature rise could indicate mechanical faults, while interlock, DCS, and valve feedback could indicate control or instrumentation issues.
 
-BERT structure:
+The rule-based route has clear limitations:
+
+1. Chemical-industry repair text contains many abbreviations, informal descriptions, and synonymous expressions, so rule coverage becomes expensive to maintain.
+2. P0/P1 high-risk identification often depends on contextual combinations rather than isolated keywords.
+3. Responsible department routing is not a one-to-one mapping from fault category; equipment object, impact scope, and risk level can change the dispatch decision.
+4. Rules are interpretable, but generalization is limited and long-term iteration becomes difficult.
+
+Conclusion: rules are useful for data audits, leakage-phrase checks, and human-review assistance, but they are not suitable as the main modeling route.
+
+### 3.2 Stage 2: Route Comparison
+
+Before fixing the final structure, the project compares four technical routes:
+
+| Route | Representative Methods | Strengths | Limitations | Project Role |
+|------|------|------|------|------|
+| Keyword rules | Dictionaries, regular expressions, manual mapping tables | Interpretable, low deployment cost, easy to audit | High maintenance cost and weak coverage of implicit risk | Used for audit and leakage checks, not as the main model |
+| Traditional machine learning | TF-IDF / character n-gram + Naive Bayes / Linear SVM | Fast training, few dependencies, good for engineering validation | Limited ability to model long-range semantics and contextual combinations | Default public baseline |
+| Pretrained language models | Chinese BERT / MacBERT / RoBERTa-wwm-ext | Strong contextual semantics for complex repair text | Higher training cost; needs GPU and model cache | Formal semantic modeling route |
+| Large-language-model classification | Prompt classification, few-shot classification, external inference APIs | Fast cold start and rich explanations | Cost, stability, data security, and batch inference control need extra review | Possible future quality-check or review assistant |
+
+Final decision: keep a dual-route design with a lightweight baseline and a BERT multi-task training entry. The baseline verifies data, scripts, and evaluation flow quickly; the BERT route is reserved for formal semantic modeling on authorized enterprise data.
+
+### 3.3 Stage 3: From Single-Task Classification To Multi-Task Modeling
+
+A straightforward first implementation would train three independent classifiers: one for fault category, one for downtime risk level, and one for responsible department. This is simple, but it ignores the business relationship among the three tasks.
+
+The project therefore maps one repair text to three structured labels:
 
 ```text
-Chinese repair text
+Repair text
     |
-Tokenizer
+Shared text features or shared semantic representation
     |
-BERT Encoder
-    |
-Shared representation
-    |
-fault_category head / risk_level head / department head
+fault_category / risk_level / department
 ```
 
-Evaluation focuses on macro-F1, P0/P1 recall, three-task exact match, and department confusion, not only accuracy.
+This design is used because:
+
+1. Fault category and responsible department are strongly related.
+2. Risk level affects dispatch priority and downstream human-review strategy.
+3. A three-task joint output is closer to real dispatch decisions than one isolated label.
+4. The BERT route can reuse one shared encoder and learn task-specific decision boundaries through three heads.
+
+The public baseline uses the same character n-gram feature logic and trains lightweight classifiers for the three tasks. The BERT entry uses a shared Chinese BERT encoder with three classification heads and performs full fine-tuning of the encoder and heads.
+
+### 3.4 Stage 4: Dataset Split Strategy
+
+If the dataset is stratified only by one label such as `fault_category`, the joint distribution of `risk_level` and `department` may drift across train, validation, and test sets. For a multi-task dispatch system, this directly affects evaluation reliability.
+
+Step 3 therefore stratifies by the combined three-task label:
+
+```text
+stratify_key = fault_category + risk_level + department
+```
+
+The goal is not superficial balance on a single task, but preserving real dispatch combinations across `train / val / test` so evaluation better reflects end-to-end usage.
+
+### 3.5 Stage 5: From Accuracy To Risk-Oriented Evaluation
+
+It is tempting to evaluate the model only with overall accuracy. In chemical-industry repair dispatch, however, different mistakes carry different business costs. Missing a P0/P1 high-risk ticket is more serious than misclassifying an ordinary P2/P3 ticket. Department misrouting creates transfer and waiting costs. Any one of the three task errors may affect dispatch decisions.
+
+The evaluation scope is therefore expanded to:
+
+1. `accuracy`: overall task-level classification ability.
+2. `macro-F1`: performance across labels without hiding low-frequency classes.
+3. `P0/P1 recall`: whether high-risk work orders are identified in time.
+4. `three-task exact match`: whether all three predictions are correct at the same time.
+5. Confusion summaries: typical misclassification boundaries among fault category, risk level, and department.
+
+Conclusion: this project does not optimize for one accuracy number only. The evaluation system is built around dispatch risk, review cost, and high-risk recall.
+
+### 3.6 Stage 6: From Offline Classification To Human-In-The-Loop Operation
+
+Offline classification only completes the first step from text to labels. In enterprise deployment, the model output should be used as dispatch support rather than a replacement for human judgment.
+
+Recommended loop:
+
+```text
+New repair text
+    |
+Three-task model output
+    |
+Confidence and risk-level check
+    |
+High-risk or low-confidence samples go to human review
+    |
+Reviewed results return to training data
+```
+
+This design keeps final control with human reviewers in safety-critical production settings while letting the model handle frequent, repetitive, standardized triage work. With real enterprise tickets, the next priority should be low-confidence sample feedback, P0/P1 misclassification audits, and department misrouting analysis.
 
 ---
 
