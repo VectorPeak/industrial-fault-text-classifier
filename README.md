@@ -1,8 +1,8 @@
 <div align="center">
 
-# Industrial Fault Text Classifier | 化工业设备报修文本多任务分类系统
+# Industrial Fault Text Classifier | 化工设备报修文本多任务分类系统
 
-面向化工业报修文本的故障大类、停机风险等级与处理部门多任务分类方案
+面向化工报修文本的故障大类、停机风险等级与处理部门多任务分类方案
 
 ![python](https://img.shields.io/badge/python-3.10+-3776AB)
 ![pytorch](https://img.shields.io/badge/PyTorch-optional--BERT-EE4C2C)
