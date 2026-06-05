@@ -1,6 +1,7 @@
+"""Training entry points for baseline and BERT backends."""
+
 from __future__ import annotations
 
-import shutil
 from pathlib import Path
 
 from .baseline import MultitaskNaiveBayes
@@ -11,6 +12,7 @@ from .labels import build_label_schema, load_label_schema, save_label_schema
 
 
 def load_records_with_limit(path: str | Path, max_samples: int | None = None) -> list[Record]:
+    """Load records and optionally cap training size for fast smoke runs."""
     records = read_records(path)
     if max_samples is not None and max_samples > 0:
         return records[:max_samples]
@@ -32,14 +34,17 @@ def train_model(
     learning_rate: float = 2e-5,
     max_length: int = 96,
 ) -> None:
+    """Train the requested backend and write model artifacts to model_dir."""
     train_records = load_records_with_limit(train_path, max_train_samples)
     val_records = read_records(val_path)
     schema = load_label_schema(labels_path) if Path(labels_path).exists() else build_label_schema(train_records)
     output_dir = Path(model_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
+    # Copy the label schema into the model artifact so prediction is self-contained.
     save_label_schema(output_dir / "labels.json", schema)
 
     if backend == "naive_bayes":
+        # The baseline is intentionally dependency-light and suitable for CI checks.
         model = MultitaskNaiveBayes(alpha=alpha, ngram_range=ngram_range).fit(train_records, schema)
         model.save(output_dir / "model.pkl")
         write_json(
@@ -55,6 +60,7 @@ def train_model(
         return
 
     if backend == "bert":
+        # BERT training performs full fine-tuning of encoder and task heads.
         train_bert_classifier(
             train_records=train_records,
             val_records=val_records,
@@ -82,4 +88,3 @@ def train_model(
         return
 
     raise ValueError(f"Unsupported backend: {backend}")
-

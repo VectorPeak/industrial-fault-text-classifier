@@ -1,3 +1,5 @@
+"""BERT full fine-tuning entry for the multi-task classifier."""
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -20,12 +22,15 @@ def train_bert_classifier(
     loss_weights: dict[str, float] | None = None,
     device: str | None = None,
 ) -> None:
+    """Fine-tune the full BERT encoder and three task heads."""
     import torch
     from torch import nn
     from torch.utils.data import DataLoader, Dataset
     from transformers import AutoModel, AutoTokenizer
 
     class RepairDataset(Dataset):
+        """Torch dataset wrapper around normalized repair records."""
+
         def __init__(self, records: list[Record]) -> None:
             self.records = records
 
@@ -36,8 +41,11 @@ def train_bert_classifier(
             return self.records[index]
 
     class MultiTaskBertClassifier(nn.Module):
+        """Shared BERT encoder with one linear classification head per task."""
+
         def __init__(self) -> None:
             super().__init__()
+            # The encoder is not frozen; optimizer below updates full BERT weights.
             self.encoder = AutoModel.from_pretrained(model_name)
             hidden_size = self.encoder.config.hidden_size
             self.dropout = nn.Dropout(0.1)
@@ -52,6 +60,7 @@ def train_bert_classifier(
             output = self.encoder(input_ids=input_ids, attention_mask=attention_mask)
             pooled = getattr(output, "pooler_output", None)
             if pooled is None:
+                # Some encoders do not expose pooler_output; use masked mean pooling.
                 mask = attention_mask.unsqueeze(-1)
                 pooled = (output.last_hidden_state * mask).sum(dim=1) / mask.sum(dim=1).clamp(min=1)
             pooled = self.dropout(pooled)
@@ -60,11 +69,13 @@ def train_bert_classifier(
     tokenizer = AutoTokenizer.from_pretrained(model_name)
     resolved_device = torch.device(device or ("cuda" if torch.cuda.is_available() else "cpu"))
     model = MultiTaskBertClassifier().to(resolved_device)
+    # model.parameters() includes encoder and heads, so this is full fine-tuning.
     optimizer = torch.optim.AdamW(model.parameters(), lr=learning_rate)
     criterion = nn.CrossEntropyLoss()
     weights = loss_weights or {task: 1.0 for task in TASKS}
 
     def collate(batch: list[Record]):
+        """Tokenize raw text and encode task labels for one batch."""
         encoded = tokenizer(
             [item["text"] for item in batch],
             padding=True,
@@ -82,6 +93,7 @@ def train_bert_classifier(
     val_loader = DataLoader(RepairDataset(val_records), batch_size=batch_size, shuffle=False, collate_fn=collate)
 
     for epoch in range(epochs):
+        # Train for one epoch, then run a lightweight validation accuracy check.
         model.train()
         total_loss = 0.0
         for encoded, labels in train_loader:
@@ -112,6 +124,7 @@ def train_bert_classifier(
 
 
 def _quick_bert_accuracy(model, loader, device) -> float:
+    """Compute average accuracy across the three BERT task heads."""
     import torch
 
     total = 0
@@ -128,4 +141,3 @@ def _quick_bert_accuracy(model, loader, device) -> float:
                 correct += int((logits[task].argmax(dim=-1) == labels[task]).sum().detach().cpu())
     model.train()
     return correct / total if total else 0.0
-

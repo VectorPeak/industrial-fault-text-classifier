@@ -1,3 +1,5 @@
+"""Evaluation metrics for the three-task repair text classifier."""
+
 from __future__ import annotations
 
 from collections import Counter
@@ -8,6 +10,7 @@ from .labels import task_labels
 
 
 def classification_metrics(y_true: list[str], y_pred: list[str], labels: list[str]) -> dict:
+    """Compute accuracy and macro-averaged classification metrics for one task."""
     total = len(y_true)
     correct = sum(1 for expected, predicted in zip(y_true, y_pred, strict=True) if expected == predicted)
     per_label = {}
@@ -15,6 +18,7 @@ def classification_metrics(y_true: list[str], y_pred: list[str], labels: list[st
     recall_values = []
     f1_values = []
     for label in labels:
+        # Each label is scored independently before macro averaging.
         tp = sum(1 for expected, predicted in zip(y_true, y_pred, strict=True) if expected == label and predicted == label)
         fp = sum(1 for expected, predicted in zip(y_true, y_pred, strict=True) if expected != label and predicted == label)
         fn = sum(1 for expected, predicted in zip(y_true, y_pred, strict=True) if expected == label and predicted != label)
@@ -40,6 +44,7 @@ def classification_metrics(y_true: list[str], y_pred: list[str], labels: list[st
 
 
 def multitask_metrics(records: list[Record], predictions: list[Record], schema: dict) -> dict:
+    """Compute per-task metrics plus joint exact match and P0/P1 recall."""
     metrics = {}
     exact_match = 0
     for expected, predicted in zip(records, predictions, strict=True):
@@ -51,6 +56,7 @@ def multitask_metrics(records: list[Record], predictions: list[Record], schema: 
         y_pred = [record[task] for record in predictions]
         metrics[task] = classification_metrics(y_true, y_pred, task_labels(schema, task))
 
+    # High-risk recall is tracked separately because P0/P1 misses are costly.
     p01_true = [record["risk_level"] in {"P0", "P1"} for record in records]
     p01_pred = [record["risk_level"] in {"P0", "P1"} for record in predictions]
     tp = sum(1 for expected, predicted in zip(p01_true, p01_pred, strict=True) if expected and predicted)
@@ -61,9 +67,9 @@ def multitask_metrics(records: list[Record], predictions: list[Record], schema: 
 
 
 def confusion_pairs(records: list[Record], predictions: list[Record], task: str, top_k: int = 20) -> list[dict]:
+    """Return the most frequent expected/predicted pairs for error analysis."""
     pairs = Counter((expected[task], predicted[task]) for expected, predicted in zip(records, predictions, strict=True))
     rows = []
     for (expected, predicted), count in pairs.most_common(top_k):
         rows.append({"expected": expected, "predicted": predicted, "count": count})
     return rows
-

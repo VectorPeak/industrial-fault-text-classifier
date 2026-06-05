@@ -1,3 +1,5 @@
+"""End-to-end pipeline functions used by CLI commands and step scripts."""
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -23,6 +25,7 @@ from .training import train_model
 
 
 def convert_dataset(input_path: str | Path, output_path: str | Path, sample_rows: int | None = None) -> dict:
+    """Convert raw or standard input into canonical records written to disk."""
     records = read_records(input_path)
     if sample_rows is not None and sample_rows > 0:
         records = records[:sample_rows]
@@ -31,6 +34,7 @@ def convert_dataset(input_path: str | Path, output_path: str | Path, sample_rows
 
 
 def build_eda_report(input_path: str | Path, report_path: str | Path) -> dict:
+    """Build a JSON EDA report for label, text, and leakage diagnostics."""
     records = read_records(input_path)
     report = {
         "validation": validate_records(records),
@@ -38,6 +42,7 @@ def build_eda_report(input_path: str | Path, report_path: str | Path) -> dict:
         "duplicate_text_rows": len(records) - len({record["text"] for record in records}),
         "conflicting_text_count": len(find_conflicting_texts(records)),
         "leakage_phrase_hits": count_leakage_phrases(records),
+        # Keep distributions machine-readable so dashboards can reuse the report.
         "label_distribution": {
             task: dict(label_distribution(records, task).most_common())
             for task in TASKS
@@ -61,6 +66,7 @@ def clean_split_dataset(
     val_ratio: float = 0.1,
     test_ratio: float = 0.1,
 ) -> dict:
+    """Clean records, save label schema, and write stratified data splits."""
     records = read_records(input_path)
     cleaned, clean_stats = clean_records(records)
     schema = build_label_schema(cleaned)
@@ -74,6 +80,7 @@ def clean_split_dataset(
         "test": output / "test.csv",
     }
     for split_name, split_records in splits.items():
+        # Split files are generated artifacts and stay under ignored directories.
         write_records(paths[split_name], split_records)
 
     report = {
@@ -87,6 +94,7 @@ def clean_split_dataset(
 
 
 def run_smoke_pipeline(root: str | Path) -> dict:
+    """Run a lightweight end-to-end pipeline on the committed sample dataset."""
     root_path = Path(root)
     sample_path = root_path / "data" / "samples" / "sample_repair_text.csv"
     split_dir = root_path / "data" / "processed" / "go_splits"
@@ -95,6 +103,7 @@ def run_smoke_pipeline(root: str | Path) -> dict:
     model_dir = root_path / "artifacts" / "models" / "go_baseline"
     report_dir.mkdir(parents=True, exist_ok=True)
 
+    # The smoke path proves wiring and file contracts without touching full data.
     split_report = clean_split_dataset(
         input_path=sample_path,
         output_dir=split_dir,

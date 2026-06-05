@@ -1,3 +1,5 @@
+"""Label schema creation, persistence, and encode/decode helpers."""
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -8,6 +10,7 @@ from .data import Record
 
 
 def build_label_schema(records: list[Record]) -> dict:
+    """Build deterministic label mappings from the current dataset."""
     tasks = {}
     for task in TASKS:
         labels = sorted({record[task] for record in records})
@@ -16,6 +19,7 @@ def build_label_schema(records: list[Record]) -> dict:
 
 
 def with_id2label(schema: dict) -> dict:
+    """Populate reverse mappings so saved artifacts are self-describing."""
     for task, payload in schema["tasks"].items():
         label2id = payload["label2id"]
         payload["id2label"] = {str(index): label for label, index in label2id.items()}
@@ -23,22 +27,26 @@ def with_id2label(schema: dict) -> dict:
 
 
 def load_label_schema(path: str | Path) -> dict:
+    """Load label schema and ensure reverse mappings exist."""
     return with_id2label(load_json(path))
 
 
 def save_label_schema(path: str | Path, schema: dict) -> None:
+    """Persist label schema in a prediction-friendly format."""
     write_json(path, with_id2label(schema))
 
 
 def task_labels(schema: dict, task: str) -> list[str]:
+    """Return labels ordered by numeric class id."""
     id2label = schema["tasks"][task]["id2label"]
     return [id2label[str(index)] for index in range(len(id2label))]
 
 
 def encode_label(schema: dict, task: str, label: str) -> int:
+    """Convert a human-readable label to its numeric id."""
     return int(schema["tasks"][task]["label2id"][label])
 
 
 def decode_label(schema: dict, task: str, label_id: int) -> str:
+    """Convert a numeric class id back to its human-readable label."""
     return schema["tasks"][task]["id2label"][str(label_id)]
-

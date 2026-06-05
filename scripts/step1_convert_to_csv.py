@@ -1,8 +1,11 @@
+"""Step 1 wrapper: standardize raw repair text data into CSV/TSV format."""
+
 from __future__ import annotations
 
 import sys
 from pathlib import Path
 
+# Allow running this script directly without installing the package first.
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
@@ -10,5 +13,5 @@ from industrial_fault_classifier.cli import main
 
 
 if __name__ == "__main__":
+    # Delegate argument parsing and execution to the shared CLI implementation.
     main(["convert", *sys.argv[1:]])
-

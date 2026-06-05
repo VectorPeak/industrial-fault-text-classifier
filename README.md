@@ -158,43 +158,54 @@ python scripts\step1_convert_to_csv.py --input data\raw\manufacturing_repair_tex
 
 ```text
 industrial-fault-text-classifier/
-├── configs/
-│   ├── labels.json
-│   └── train_config.json
-├── data/
-│   ├── README.md
+├── configs/                                      # 配置文件与标签体系
+│   ├── labels.json                               # 三个任务的 label2id / id2label 映射
+│   └── train_config.json                         # 数据路径、切分比例、baseline 与 BERT 训练参数
+│
+├── data/                                         # 数据目录
+│   ├── README.md                                 # 数据目录说明
 │   ├── full/
-│   │   └── chemical_repair_text_dataset_cn.csv
-│   ├── raw/                         # 本地原始来源文件，默认不上传
+│   │   └── chemical_repair_text_dataset_cn.csv   # 全量构造数据 CSV，约 22 万行
+│   ├── raw/                                      # 本地原始 TXT/TSV 来源文件，默认不上传
 │   └── samples/
-│       └── sample_repair_text.csv    # 公开样例数据
-├── docs/
-│   ├── step1_dataset_prepare.md
-│   ├── step2_dataset_eda.md
-│   ├── step3_cleaning_stratified_split.md
-│   ├── step4_model_training.md
-│   └── step5_evaluation_inference.md
-├── scripts/
-│   ├── step1_convert_to_csv.py
-│   ├── step2_dataset_eda.py
-│   ├── step3_clean_and_split.py
-│   ├── step4_model_training.py
-│   └── step5_evaluate_and_predict.py
+│       └── sample_repair_text.csv                # 小规模公开样例，用于快速 smoke test
+│
+├── docs/                                         # 分步骤技术说明
+│   ├── step1_dataset_prepare.md                  # Step 1：数据标准化与 CSV 生成
+│   ├── step2_dataset_eda.md                      # Step 2：标签分布、文本长度与泄漏风险分析
+│   ├── step3_cleaning_stratified_split.md        # Step 3：清洗、去重、冲突剔除与分层切分
+│   ├── step4_model_training.md                   # Step 4：baseline 与 BERT 多任务训练说明
+│   └── step5_evaluation_inference.md             # Step 5：评估指标与单条文本推理
+│
+├── scripts/                                      # 可直接运行的步骤脚本
+│   ├── step1_convert_to_csv.py                   # 调用 CLI convert，将原始数据转为标准 CSV
+│   ├── step2_dataset_eda.py                      # 调用 CLI eda，生成数据分析报告
+│   ├── step3_clean_and_split.py                  # 调用 CLI split，生成 train / val / test
+│   ├── step4_model_training.py                   # 调用 CLI train，训练 baseline 或 BERT
+│   └── step5_evaluate_and_predict.py             # 调用 CLI evaluate / predict，评估或推理
+│
 ├── src/
-│   └── industrial_fault_classifier/
-│       ├── baseline.py
-│       ├── bert.py
-│       ├── cli.py
-│       ├── data.py
-│       ├── evaluation.py
-│       ├── inference.py
-│       ├── labels.py
-│       ├── metrics.py
-│       ├── pipeline.py
-│       └── training.py
-├── README.md
-├── README_EN.md
-└── pyproject.toml
+│   └── industrial_fault_classifier/              # 核心 Python 包
+│       ├── __init__.py                           # 包版本与模块声明
+│       ├── baseline.py                           # 字符 n-gram 多任务 Naive Bayes baseline
+│       ├── bert.py                               # BERT 共享编码器 + 三分类头训练入口
+│       ├── cli.py                                # 命令行参数解析与子命令分发
+│       ├── config.py                             # 项目路径、JSON 配置读写工具
+│       ├── constants.py                          # 数据列名、任务名、默认预测文本
+│       ├── data.py                               # CSV/TSV 读写、校验、清洗与分层切分
+│       ├── evaluation.py                         # 模型加载、测试集评估与预测结果导出
+│       ├── inference.py                          # 单条报修文本推理封装
+│       ├── labels.py                             # 标签映射生成、保存、加载与解码
+│       ├── metrics.py                            # accuracy、macro-F1、P0/P1 召回等指标
+│       ├── pipeline.py                           # Step 1-5 端到端流程编排
+│       └── training.py                           # baseline / BERT 训练统一入口
+│
+├── artifacts/                                    # 本地运行产物目录
+│   └── README.md                                 # 说明模型、报告、图表等生成产物的存放规则
+├── .gitignore                                    # 忽略 raw、processed、模型、报告、缓存等文件
+├── README.md                                     # 中文项目说明
+├── README_EN.md                                  # 英文项目说明
+└── pyproject.toml                                # Python 包配置、依赖与命令行入口
 ```
 
 ---

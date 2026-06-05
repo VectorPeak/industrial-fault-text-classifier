@@ -1,6 +1,7 @@
+"""Model evaluation and batch prediction helpers."""
+
 from __future__ import annotations
 
-import json
 from pathlib import Path
 
 from .baseline import MultitaskNaiveBayes
@@ -12,6 +13,7 @@ from .metrics import confusion_pairs, multitask_metrics
 
 
 def load_backend(model_dir: str | Path) -> str:
+    """Read the model backend from metadata, with baseline fallback."""
     metadata_path = Path(model_dir) / "metadata.json"
     if not metadata_path.exists():
         if (Path(model_dir) / "model.pkl").exists():
@@ -21,10 +23,12 @@ def load_backend(model_dir: str | Path) -> str:
 
 
 def predict_records(model_dir: str | Path, records: list[Record]) -> tuple[list[Record], dict]:
+    """Load a supported model backend and predict a list of records."""
     model_path = Path(model_dir)
     backend = load_backend(model_path)
     schema = load_label_schema(model_path / "labels.json")
     if backend == "naive_bayes":
+        # The unified evaluator currently supports the lightweight baseline path.
         model = MultitaskNaiveBayes.load(model_path / "model.pkl")
         return model.predict_many(records), schema
     raise ValueError("BERT evaluation is intentionally kept separate from the lightweight smoke-test evaluator.")
@@ -37,10 +41,12 @@ def evaluate_model(
     prediction_path: str | Path | None = None,
     max_samples: int | None = None,
 ) -> dict:
+    """Evaluate a model and optionally write metrics and predictions to disk."""
     records = read_records(data_path)
     if max_samples is not None and max_samples > 0:
         records = records[:max_samples]
     predictions, schema = predict_records(model_dir, records)
+    # Core task metrics are augmented with frequent confusion pairs for diagnosis.
     metrics = multitask_metrics(records, predictions, schema)
     metrics["confusion_top"] = {task: confusion_pairs(records, predictions, task) for task in TASKS}
 
@@ -49,4 +55,3 @@ def evaluate_model(
     if prediction_path:
         write_records(prediction_path, predictions)
     return metrics
-

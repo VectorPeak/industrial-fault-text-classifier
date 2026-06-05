@@ -1,3 +1,5 @@
+"""Lightweight multi-task Naive Bayes baseline for smoke tests."""
+
 from __future__ import annotations
 
 import math
@@ -11,6 +13,7 @@ from .labels import task_labels
 
 
 def tokenize(text: str, ngram_range: tuple[int, int] = (1, 2)) -> list[str]:
+    """Tokenize Chinese repair text into character n-grams."""
     chars = [char for char in text.strip() if not char.isspace()]
     tokens: list[str] = []
     min_n, max_n = ngram_range
@@ -22,6 +25,8 @@ def tokenize(text: str, ngram_range: tuple[int, int] = (1, 2)) -> list[str]:
 
 
 class MultitaskNaiveBayes:
+    """Train one multinomial Naive Bayes classifier per prediction task."""
+
     def __init__(self, alpha: float = 1.0, ngram_range: tuple[int, int] = (1, 2)) -> None:
         self.alpha = alpha
         self.ngram_range = ngram_range
@@ -32,6 +37,7 @@ class MultitaskNaiveBayes:
         self.vocab: set[str] = set()
 
     def fit(self, records: list[Record], schema: dict) -> "MultitaskNaiveBayes":
+        """Estimate class priors and token likelihoods from training records."""
         self.schema = schema
         self.class_doc_counts = {task: Counter() for task in TASKS}
         self.token_counts = {task: defaultdict(Counter) for task in TASKS}
@@ -39,6 +45,7 @@ class MultitaskNaiveBayes:
         self.vocab = set()
 
         for record in records:
+            # The same text features are shared by all three task-specific heads.
             tokens = tokenize(record["text"], self.ngram_range)
             self.vocab.update(tokens)
             for task in TASKS:
@@ -49,6 +56,7 @@ class MultitaskNaiveBayes:
         return self
 
     def predict_one(self, text: str) -> Record:
+        """Predict all three labels for one repair text."""
         if self.schema is None:
             raise RuntimeError("Model is not fitted.")
 
@@ -56,6 +64,7 @@ class MultitaskNaiveBayes:
         vocab_size = max(1, len(self.vocab))
         output: Record = {"text": text, "fault_category": "", "risk_level": "", "department": ""}
         for task in TASKS:
+            # Compute the posterior score for each class under one task.
             labels = task_labels(self.schema, task)
             total_docs = sum(self.class_doc_counts[task].values())
             best_label = labels[0]
@@ -76,9 +85,11 @@ class MultitaskNaiveBayes:
         return output
 
     def predict_many(self, records: list[Record]) -> list[Record]:
+        """Predict labels for a batch of records while preserving input text."""
         return [self.predict_one(record["text"]) for record in records]
 
     def save(self, path: str | Path) -> None:
+        """Persist the baseline model as a local pickle artifact."""
         output_path = Path(path)
         output_path.parent.mkdir(parents=True, exist_ok=True)
         with output_path.open("wb") as file:
@@ -86,9 +97,9 @@ class MultitaskNaiveBayes:
 
     @staticmethod
     def load(path: str | Path) -> "MultitaskNaiveBayes":
+        """Load and type-check a saved baseline model."""
         with Path(path).open("rb") as file:
             model = pickle.load(file)
         if not isinstance(model, MultitaskNaiveBayes):
             raise TypeError(f"Unexpected model type: {type(model)!r}")
         return model
-

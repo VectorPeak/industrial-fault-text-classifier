@@ -1,3 +1,5 @@
+"""Dataset IO, validation, cleaning, and stratified splitting utilities."""
+
 from __future__ import annotations
 
 import csv
@@ -11,6 +13,7 @@ from .constants import COLUMNS, TASKS
 
 Record = dict[str, str]
 
+# These patterns identify phrases that directly reveal labels in the input text.
 LEAKAGE_PATTERNS = (
     re.compile(r"风险等级[:：]?\s*P[0-3]"),
     re.compile(r"建议按\s*P[0-3]\s*工单处理"),
@@ -20,12 +23,14 @@ LEAKAGE_PATTERNS = (
 
 
 def _delimiter_for(path: Path) -> str:
+    """Choose CSV or TSV parsing based on file extension."""
     if path.suffix.lower() == ".csv":
         return ","
     return "\t"
 
 
 def read_records(path: str | Path) -> list[Record]:
+    """Read headered CSV/TSV or raw four-column TSV into normalized records."""
     input_path = Path(path)
     delimiter = _delimiter_for(input_path)
     records: list[Record] = []
@@ -35,10 +40,12 @@ def read_records(path: str | Path) -> list[Record]:
         first_cells = sample.strip().split(delimiter)
         has_header = tuple(first_cells[:4]) == COLUMNS
         if has_header:
+            # Standard datasets are headered and use the canonical column names.
             reader = csv.DictReader(file, delimiter=delimiter)
             for row in reader:
                 records.append({column: (row.get(column) or "").strip() for column in COLUMNS})
         else:
+            # Raw source files are expected to contain exactly four columns.
             reader = csv.reader(file, delimiter=delimiter)
             for row in reader:
                 if not row:
@@ -50,6 +57,7 @@ def read_records(path: str | Path) -> list[Record]:
 
 
 def write_records(path: str | Path, records: list[Record]) -> None:
+    """Write records with a stable header and delimiter selected by suffix."""
     output_path = Path(path)
     output_path.parent.mkdir(parents=True, exist_ok=True)
     delimiter = _delimiter_for(output_path)
@@ -60,6 +68,7 @@ def write_records(path: str | Path, records: list[Record]) -> None:
 
 
 def validate_records(records: list[Record]) -> dict[str, int]:
+    """Count invalid rows and empty fields without mutating the dataset."""
     invalid_rows = 0
     empty_fields = 0
     for record in records:
@@ -70,14 +79,17 @@ def validate_records(records: list[Record]) -> dict[str, int]:
 
 
 def label_distribution(records: list[Record], column: str) -> Counter[str]:
+    """Return per-label counts for one task column."""
     return Counter(record[column] for record in records)
 
 
 def combo_distribution(records: list[Record]) -> Counter[tuple[str, str, str]]:
+    """Return joint label counts across the three tasks."""
     return Counter(tuple(record[task] for task in TASKS) for record in records)
 
 
 def text_length_summary(records: list[Record]) -> dict[str, float | int]:
+    """Summarize repair-text length for tokenizer max_length decisions."""
     lengths = sorted(len(record["text"]) for record in records)
     if not lengths:
         return {"min": 0, "max": 0, "mean": 0.0, "p50": 0, "p90": 0, "p95": 0}
@@ -97,6 +109,7 @@ def text_length_summary(records: list[Record]) -> dict[str, float | int]:
 
 
 def find_conflicting_texts(records: list[Record]) -> dict[str, set[tuple[str, str, str]]]:
+    """Find same-text samples that map to multiple label triples."""
     labels_by_text: dict[str, set[tuple[str, str, str]]] = defaultdict(set)
     for record in records:
         labels_by_text[record["text"]].add(tuple(record[task] for task in TASKS))
@@ -104,6 +117,7 @@ def find_conflicting_texts(records: list[Record]) -> dict[str, set[tuple[str, st
 
 
 def count_leakage_phrases(records: list[Record]) -> int:
+    """Count texts that contain direct label leakage phrases."""
     count = 0
     for record in records:
         count += sum(1 for pattern in LEAKAGE_PATTERNS if pattern.search(record["text"]))
@@ -111,6 +125,7 @@ def count_leakage_phrases(records: list[Record]) -> int:
 
 
 def clean_records(records: list[Record]) -> tuple[list[Record], dict[str, int]]:
+    """Remove empty rows, exact duplicates, and same-text label conflicts."""
     cleaned: list[Record] = []
     exact_seen: set[tuple[str, str, str, str]] = set()
     removed_empty = 0
@@ -128,6 +143,7 @@ def clean_records(records: list[Record]) -> tuple[list[Record], dict[str, int]]:
         exact_seen.add(key)
         cleaned.append(normalized)
 
+    # Conflicting texts are removed entirely because no single label is reliable.
     conflicts = find_conflicting_texts(cleaned)
     if conflicts:
         cleaned = [record for record in cleaned if record["text"] not in conflicts]
@@ -150,6 +166,7 @@ def stratified_split(
     test_ratio: float = 0.1,
     seed: int = 42,
 ) -> dict[str, list[Record]]:
+    """Split records by the joint three-task label to preserve task correlation."""
     total_ratio = train_ratio + val_ratio + test_ratio
     if abs(total_ratio - 1.0) > 1e-8:
         raise ValueError(f"Split ratios must sum to 1.0, got {total_ratio}")
@@ -161,6 +178,7 @@ def stratified_split(
 
     splits = {"train": [], "val": [], "test": []}
     for group_records in grouped.values():
+        # Very small groups are kept in training so rare combinations are not lost.
         group = list(group_records)
         rng.shuffle(group)
         n = len(group)
