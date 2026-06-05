@@ -18,7 +18,7 @@
 repair text -> label mapping -> data quality check -> stratified split -> multi-task classifier -> evaluation -> inference demo
 ```
 
-> 本仓库公开数据为基于 Kaggle 公开数据集进行数据增强后的实验数据，用于复现项目流程与模型验证，不包含企业真实生产工单、设备编号、人员信息或现场敏感信息。如项目在实际企业场景中落地，真实报修记录及中间数据产物应按企业数据安全要求处理，不在公开仓库中发布。
+> 本仓库公开数据基于 Kaggle 公开企业数据集进行清洗与增强构建，仅用于复现项目流程、验证建模方案与展示工程实现；数据中不包含企业真实生产工单、设备编号、人员信息或现场敏感信息。如项目在实际企业场景中落地，真实报修记录及中间数据产物应按企业数据安全要求处理，不在公开仓库中发布。
 
 ## 0x01. 项目背景
 
@@ -38,7 +38,7 @@ repair text -> label mapping -> data quality check -> stratified split -> multi-
 
 ## 0x02. 数据集与标签体系
 
-当前公开仓库提交基于 Kaggle 公开数据集增强后的全量 CSV，并保留小规模样例用于快速 smoke test：
+当前公开仓库提交基于 Kaggle 公开企业数据集清洗增强后的全量 CSV，并保留小规模样例用于快速 smoke test：
 
 ```text
 data/full/chemical_repair_text_dataset_cn.csv
@@ -55,6 +55,12 @@ data/samples/sample_repair_text.csv
 | `department` | 推荐处理部门 |
 
 标签体系保存在 [configs/labels.json](configs/labels.json)，包括 10 个故障大类、4 个风险等级和 10 个处理部门。训练切分时使用三任务组合标签进行分层，尽量保持 `train / val / test` 中的联合分布一致。
+
+### 2.1 数据探索性分析
+
+为了确认多任务标签分布、文本长度分布以及标签之间的组合关系，项目将 Step 2 的主要 EDA 结果整理为一张组合图。图中包含故障大类分布、停机风险等级分布、推荐处理部门分布、文本长度分布，以及 `fault_category × risk_level`、`department × fault_category` 两组交叉热力图。
+
+![数据集 EDA Dashboard](artifacts/figures/eda_dashboard.png)
 
 ---
 
@@ -178,7 +184,7 @@ industrial-fault-text-classifier/
 ├── data/                                         # 数据目录
 │   ├── README.md                                 # 数据目录说明
 │   ├── full/
-│   │   └── chemical_repair_text_dataset_cn.csv   # Kaggle 公开数据集增强后的全量 CSV，约 22 万行
+│   │   └── chemical_repair_text_dataset_cn.csv   # Kaggle公开企业数据集清洗增强后的全量 CSV，约 22 万行
 │   ├── raw/                                      # 本地原始 TXT/TSV 来源文件，默认不上传
 │   └── samples/
 │       └── sample_repair_text.csv                # 小规模公开样例，用于快速 smoke test

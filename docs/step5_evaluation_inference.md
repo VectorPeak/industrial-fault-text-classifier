@@ -43,4 +43,4 @@ python scripts\step5_evaluate_and_predict.py predict --model-dir artifacts\model
 
 ## 0x05. 注意事项
 
-当前公开全量 CSV 为基于 Kaggle 公开数据集进行数据增强后的实验数据，不代表真实企业工单上线表现。正式评估应使用经过授权、脱敏和人工复核的数据，并保留独立测试集。
+当前公开全量 CSV 为基于 Kaggle 公开企业数据集清洗增强后的实验数据，用于复现流程与验证建模方案，不代表真实企业工单上线表现。正式评估应使用经过授权、脱敏和人工复核的数据，并保留独立测试集。
