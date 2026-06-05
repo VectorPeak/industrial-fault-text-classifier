@@ -1,0 +1,26 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "industrial-fault-text-classifier"
+version = "0.1.0"
+description = "Industrial repair text multi-task classification pipeline."
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+]
+
+[project.optional-dependencies]
+bert = [
+    "torch",
+    "transformers",
+    "tqdm",
+]
+
+[project.scripts]
+industrial-fault-classifier = "industrial_fault_classifier.cli:main"
+industrial-fault-go = "industrial_fault_classifier.cli:main_go"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/industrial_fault_classifier"]

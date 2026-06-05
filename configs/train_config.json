@@ -1,0 +1,33 @@
+{
+  "seed": 42,
+  "input_path": "data/raw/manufacturing_repair_text_dataset_cn.txt",
+  "standard_dataset_path": "data/processed/standard_dataset.csv",
+  "split_dir": "data/processed/splits",
+  "label_schema_path": "configs/labels.json",
+  "model_dir": "artifacts/models/baseline",
+  "report_dir": "artifacts/reports",
+  "split_ratio": {
+    "train": 0.8,
+    "val": 0.1,
+    "test": 0.1
+  },
+  "baseline": {
+    "backend": "naive_bayes",
+    "max_train_samples": 2000,
+    "alpha": 1.0,
+    "ngram_range": [1, 2]
+  },
+  "bert": {
+    "model_name": "bert-base-chinese",
+    "max_length": 96,
+    "batch_size": 16,
+    "learning_rate": 0.00002,
+    "epochs": 3,
+    "loss_weights": {
+      "fault_category": 1.0,
+      "risk_level": 1.2,
+      "department": 2.0
+    }
+  }
+}
+
