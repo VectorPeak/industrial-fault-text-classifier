@@ -276,25 +276,7 @@ The public `industrial-fault-go`, Step 5 evaluation, and single-text prediction 
 
 ---
 
-## 0x07. Key Lessons
-
-Text structuring is the starting point of maintenance-data governance: chemical-industry repair records must first be converted into stable labels such as fault category, downtime risk level, and responsible department before dispatch optimization, risk statistics, and equipment profiling become computable.
-
-Multi-task modeling is closer to real dispatch than isolated classification: predicting only the fault category answers what happened, while jointly predicting risk level and department also answers how urgent it is and who should handle it.
-
-Data quality control defines the model ceiling: empty fields, duplicate samples, same-text label conflicts, and potential label leakage directly affect supervision reliability. For work-order text projects, cleaning, auditing, and stratified splitting are as important as the model architecture.
-
-P0/P1 recall is more important than overall accuracy: in chemical production, missing a high-risk ticket is more costly than ordinary class confusion. Evaluation must therefore include P0/P1 recall, macro-F1, three-task exact match, and confusion summaries instead of accuracy alone.
-
-The baseline validates the engineering loop: character n-gram Naive Bayes does not represent the final performance ceiling, but it has few dependencies, trains quickly, and verifies whether data loading, label mapping, splitting, training, evaluation, and inference are connected.
-
-The BERT route is reserved for formal semantic modeling: after authorized and anonymized enterprise work orders are available, Chinese BERT, MacBERT, RoBERTa-wwm-ext, full fine-tuning, frozen-encoder training, and lightweight distillation can be compared systematically.
-
-Human-in-the-loop operation matters more than one-off training: low-confidence samples, high-risk misclassifications, and department-rerouting cases should enter manual review, with corrected labels fed back into the training set. In the long run, stable annotation rules and continuous feedback determine deployment quality more than a single training run.
-
----
-
-## 0x08. Project Structure
+## 0x07. Project Structure
 
 ```text
 industrial-fault-text-classifier/
@@ -315,6 +297,18 @@ industrial-fault-text-classifier/
 
 ---
 
-## 0x09. Version Notes
+## 0x08. Key Lessons
 
-The current version focuses on repository restructuring, public CSV consolidation, step-based scripts, the baseline training loop, and README documentation. The BERT multi-task training entry is retained. A complete BERT evaluation and inference workflow can be connected after the model artifact format, evaluation interface, and serving interface are finalized.
+Text structuring is the starting point of maintenance-data governance: chemical-industry repair records must first be converted into stable labels such as fault category, downtime risk level, and responsible department before dispatch optimization, risk statistics, and equipment profiling become computable.
+
+Multi-task modeling is closer to real dispatch than isolated classification: predicting only the fault category answers what happened, while jointly predicting risk level and department also answers how urgent it is and who should handle it.
+
+Data quality control defines the model ceiling: empty fields, duplicate samples, same-text label conflicts, and potential label leakage directly affect supervision reliability. For work-order text projects, cleaning, auditing, and stratified splitting are as important as the model architecture.
+
+P0/P1 recall is more important than overall accuracy: in chemical production, missing a high-risk ticket is more costly than ordinary class confusion. Evaluation must therefore include P0/P1 recall, macro-F1, three-task exact match, and confusion summaries instead of accuracy alone.
+
+The baseline validates the engineering loop: character n-gram Naive Bayes does not represent the final performance ceiling, but it has few dependencies, trains quickly, and verifies whether data loading, label mapping, splitting, training, evaluation, and inference are connected.
+
+The BERT route is reserved for formal semantic modeling: after authorized and anonymized enterprise work orders are available, Chinese BERT, MacBERT, RoBERTa-wwm-ext, full fine-tuning, frozen-encoder training, and lightweight distillation can be compared systematically.
+
+Human-in-the-loop operation matters more than one-off training: low-confidence samples, high-risk misclassifications, and department-rerouting cases should enter manual review, with corrected labels fed back into the training set. In the long run, stable annotation rules and continuous feedback determine deployment quality more than a single training run.
