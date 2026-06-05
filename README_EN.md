@@ -347,12 +347,14 @@ industrial-fault-text-classifier/
 
 ---
 
-## 0x08. Key Lessons
+## 0x08. Value And Next Steps
 
-Text structuring comes before model training: repair text must first be converted into fault category, downtime risk level, and responsible department before dispatching, statistics, and equipment profiling can have stable inputs.
+The core value of this project is to convert equipment repair text into structured labels, creating an automation foundation for maintenance dispatch, risk classification, and fault statistics. Compared with single-task classification, the multi-task design can share textual semantics while jointly modeling the relationship among fault symptoms, downtime risk, and responsible departments.
 
-Multi-task modeling is closer to real dispatching: fault type answers "what happened", risk level answers "how urgent it is", and responsible department answers "who should handle it"; the three should stay in the same business decision chain.
+Future work can continue in the following directions:
 
-Data quality determines the upper bound of the supervision signal: empty fields, duplicate samples, same-text multi-label conflicts, and label leakage directly contaminate the training target, so cleaning, auditing, and combined-label stratified splitting must happen first.
-
-High-risk recall and feedback loops must be retained: missing P0/P1 tickets is more costly than ordinary misclassification, so evaluation should inspect high-risk recall separately; low-confidence, misclassified, and reassigned samples should also enter review and flow back into the training set.
+1. Introduce authorized and anonymized real enterprise work-order samples.
+2. Build stricter risk-level annotation rules, especially to improve P0/P1 recall.
+3. Add confusion-matrix analysis to locate misclassification boundaries between responsible departments.
+4. Compare Chinese pretrained models such as MacBERT and RoBERTa-wwm-ext.
+5. Establish a low-confidence human review mechanism and feed corrected samples back into the training set.
