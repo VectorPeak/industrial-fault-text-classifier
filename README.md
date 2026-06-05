@@ -60,7 +60,7 @@ data/samples/sample_repair_text.csv
 
 为了确认多任务标签分布、文本长度分布以及标签之间的组合关系，项目将 Step 2 的主要 EDA 结果整理为一张组合图。图中包含故障大类分布、停机风险等级分布、推荐处理部门分布、文本长度分布，以及 `fault_category × risk_level`、`department × fault_category` 两组交叉热力图。
 
-![数据集 EDA Dashboard](artifacts/figures/eda_dashboard.png)
+![数据集 EDA Dashboard](https://github.com/VectorPeak/industrial-fault-text-classifier/blob/main/artifacts/figures/eda_dashboard.png?raw=true)
 
 ### 2.2 数据质量控制与清洗
 

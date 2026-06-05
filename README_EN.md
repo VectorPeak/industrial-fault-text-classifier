@@ -60,7 +60,7 @@ The label schema is stored in [configs/labels.json](configs/labels.json), coveri
 
 To inspect multi-task label distributions, text length distribution, and label relationships, the main Step 2 EDA results are summarized in one dashboard. The figure includes fault category distribution, downtime risk level distribution, responsible department distribution, text length distribution, and two cross heatmaps: `fault_category x risk_level` and `department x fault_category`.
 
-![Dataset EDA Dashboard](artifacts/figures/eda_dashboard.png)
+![Dataset EDA Dashboard](https://github.com/VectorPeak/industrial-fault-text-classifier/blob/main/artifacts/figures/eda_dashboard.png?raw=true)
 
 ### 2.2 Data Quality Control And Cleaning
 
