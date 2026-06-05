@@ -2,7 +2,7 @@
 
 # Industrial Fault Text Classifier | Chemical Equipment Repair Text Multi-Task Classification System
 
-A multi-task classification pipeline for fault category, downtime risk level, and responsible department prediction from chemical repair text.
+A multi-task classification solution for chemical repair text, covering fault category, downtime risk level, and responsible department prediction.
 
 ![python](https://img.shields.io/badge/python-3.10+-3776AB)
 ![pytorch](https://img.shields.io/badge/PyTorch-optional--BERT-EE4C2C)
@@ -18,7 +18,7 @@ A multi-task classification pipeline for fault category, downtime risk level, an
 repair text -> label mapping -> data quality check -> stratified split -> multi-task classifier -> evaluation -> inference demo
 ```
 
-> The public dataset in this repository is built by cleaning and augmenting a public Kaggle enterprise dataset. It is used only to reproduce the project workflow, validate the modeling approach, and demonstrate the engineering implementation. It does not contain real enterprise production work orders, equipment identifiers, personnel information, or sensitive site records. If this project is deployed in an enterprise environment, real repair records and intermediate data artifacts should be handled according to enterprise data security requirements and should not be published in a public repository.
+> The public dataset in this repository is constructed by cleaning and augmenting a Kaggle public enterprise dataset. It is used only to reproduce the project workflow, validate the modeling approach, and demonstrate the engineering implementation. It does not contain real enterprise production work orders, equipment identifiers, personnel information, or sensitive site records. If this project is deployed in an enterprise environment, real repair records and intermediate data artifacts should be handled according to enterprise data security requirements and should not be published in a public repository.
 
 ## 0x01. Project Background
 
@@ -36,9 +36,9 @@ The project is not intended to replace engineering judgment. Its purpose is to c
 
 ---
 
-## 0x02. Dataset And Label Schema
+## 0x02. Dataset and Label Schema
 
-The public repository currently includes a full CSV dataset cleaned and augmented from a public Kaggle enterprise dataset, together with a small sample dataset for quick smoke tests:
+The public repository currently includes a full CSV dataset cleaned and augmented from a Kaggle public enterprise dataset, together with a small sample dataset for quick smoke tests:
 
 ```text
 data/full/chemical_repair_text_dataset_cn.csv
@@ -62,7 +62,7 @@ To inspect multi-task label distributions, text length distribution, and label r
 
 ![Dataset EDA Dashboard](https://github.com/VectorPeak/industrial-fault-text-classifier/blob/main/artifacts/figures/eda_dashboard.png?raw=true)
 
-### 2.2 Data Quality Control And Cleaning
+### 2.2 Data Quality Control and Cleaning
 
 Before model training, the project brings repair text, label fields, and dataset split results into a unified data quality control process. Step 3 not only performs basic cleaning, but also audits supervision consistency, potential label leakage, and the joint distribution of the three tasks. This reduces the impact of noisy samples on classification boundaries and evaluation conclusions.
 
@@ -77,9 +77,9 @@ Before model training, the project brings repair text, label fields, and dataset
 
 ---
 
-## 0x03. Model And Technical Selection Process
+## 0x03. Model and Technology Selection Process
 
-### 3.1 Stage 1: Applicable Boundary Of Rule-Based Dispatch
+### 3.1 Stage 1: Applicability Boundaries of Rule-Based Dispatch
 
 At an early stage, the project considered using keyword dictionaries, fault phrase libraries, and department mapping rules to classify repair text, judge risk, and recommend handling departments. For example, when terms such as "bearing", "vibration", and "temperature rise" appear in the text, the record could be assigned to mechanical faults; when expressions such as "interlock", "DCS", and "valve position feedback" appear, it could be assigned to control-system or instrumentation-related categories.
 
@@ -96,7 +96,7 @@ Therefore, this project positions rule-based methods as tools for data audit, la
 
 Before finalizing the solution, the project compared four technical routes:
 
-| Route | Representative Methods | Strengths | Limitations | Role In This Project |
+| Route | Representative Methods | Strengths | Limitations | Role in This Project |
 |-------|------------------------|-----------|-------------|----------------------|
 | Keyword rules | Dictionary matching, regex rules, manual mapping tables | Strong interpretability, low deployment cost, easy audit | High maintenance cost, difficult to cover synonyms, implicit risk, and complex context | Used for data audit and leakage checks, not as the main model |
 | Traditional machine learning | TF-IDF / character n-gram + Naive Bayes / Linear SVM | Fast training, few dependencies, suitable for quickly validating the engineering loop | Limited ability to model long-range semantics, contextual combinations, and complex expressions | Default public-repository baseline |
@@ -105,7 +105,7 @@ Before finalizing the solution, the project compared four technical routes:
 
 The final design uses a dual-route structure: "lightweight baseline + BERT multi-task model entry." The baseline validates the data, scripts, evaluation, and inference loop quickly; the BERT route is used for formal semantic modeling when compute resources and authorized data are available.
 
-### 3.3 Stage 3: From Single-Task Classification To Multi-Task Joint Modeling
+### 3.3 Stage 3: From Single-Task Classification to Multi-Task Joint Modeling
 
 An initial feasible approach was to train three independent classifiers: one for fault category, one for downtime risk level, and one for responsible department. This is easy to implement, but it separates business relationships among the three tasks.
 
@@ -140,7 +140,7 @@ stratify_key = fault_category + risk_level + department
 
 The goal is not to pursue superficial balance for each single-task label, but to preserve real dispatch combinations in `train / val / test` as much as possible, making evaluation results closer to the end-to-end usage scenario.
 
-### 3.5 Stage 5: From Accuracy To Risk-Oriented Evaluation
+### 3.5 Stage 5: From Accuracy to Risk-Oriented Evaluation
 
 The initial evaluation design can easily focus only on overall accuracy. In chemical repair scenarios, however, different errors have different business costs: missing a P0/P1 high-risk work order is more serious than misclassifying an ordinary P2/P3 ticket; a wrong responsible department increases reassignment and waiting costs; and an error in any of the three tasks may affect the final dispatch decision.
 
@@ -154,7 +154,7 @@ Therefore, the evaluation scope is expanded to:
 
 This project does not use a single highest accuracy score as the only goal. Instead, it builds an evaluation framework around dispatch risk, high-risk recall, review cost, and department reassignment cost.
 
-### 3.6 Stage 6: From Offline Classification To Production Decision Support
+### 3.6 Stage 6: From Offline Classification to Production Decision Support
 
 An offline model can only complete the basic conversion from text to labels. For enterprise deployment, a more reasonable approach is to use model output as dispatch suggestions and risk prompts, rather than directly replacing engineering judgment.
 
@@ -176,13 +176,13 @@ This design preserves the necessary human review authority in safety-critical pr
 
 ---
 
-## 0x04. Technical Architecture And Core Pipeline
+## 0x04. Technical Architecture and Core Pipeline
 
 ```text
 Raw repair text data (4 columns: text / fault_category / risk_level / department)
     |
     v
-Step 1: Data standardization and CSV solidification
+Step 1: Data standardization and CSV generation
     |-- Read raw TXT/TSV four-column data and unify field names and encoding
     |-- Validate column count, empty fields, abnormal rows, and CSV escaping
     |-- Output full CSV: data/full/chemical_repair_text_dataset_cn.csv (220,000 rows)
@@ -225,7 +225,7 @@ The corresponding step-by-step technical documents are:
 
 | Document | Topic | Key Content |
 |----------|-------|-------------|
-| [step1_dataset_prepare.md](docs/step1_dataset_prepare.md) | Data standardization and CSV solidification | Raw TXT/TSV/CSV reading, four-field unification, sample generation |
+| [step1_dataset_prepare.md](docs/step1_dataset_prepare.md) | Data standardization and CSV generation | Raw TXT/TSV/CSV reading, four-field unification, sample generation |
 | [step2_dataset_eda.md](docs/step2_dataset_eda.md) | EDA and quality audit | Label distribution, text length, combined labels, duplicate texts, leakage phrase checks |
 | [step3_cleaning_stratified_split.md](docs/step3_cleaning_stratified_split.md) | Data cleaning and stratified splitting | Empty fields, duplicate samples, conflicting labels, and three-task combined stratification |
 | [step4_model_training.md](docs/step4_model_training.md) | Multi-task model training | Character n-gram baseline, BERT shared encoder, and three classification heads |
@@ -233,7 +233,7 @@ The corresponding step-by-step technical documents are:
 
 ---
 
-## 0x05. Final Value And Deployment Scenarios
+## 0x05. Final Value and Deployment Scenarios
 
 ### 5.1 Prediction Performance
 
@@ -251,7 +251,7 @@ This project maps one repair text into three structured results: fault category,
 1. Convert natural-language repair records into structured labels, reducing the dependence of initial work order screening on individual experience and text expression differences.
 2. Identify high-risk work orders early, allowing dispatchers to prioritize events that may affect safety, downtime, or production-line continuity.
 3. Provide responsible department recommendations when a work order is created, reducing reassignment, communication confirmation, and response delay costs.
-4. Turn historical repair text into statistical data assets that support fault type analysis, department workload analysis, and weak-equipment identification.
+4. Turn historical repair text into statistical data assets that support fault type analysis, department workload analysis, and weak equipment link identification.
 5. Review low-confidence samples and high-risk misclassified samples manually, then feed corrected results back into the training set to continuously improve the model's adaptation to enterprise site language.
 
 ---
@@ -302,7 +302,7 @@ industrial-fault-text-classifier/
 |-- data/                                         # Data directory
 |   |-- README.md                                 # Data directory description
 |   |-- full/
-|   |   `-- chemical_repair_text_dataset_cn.csv   # Full CSV cleaned and augmented from a public Kaggle enterprise dataset, about 220,000 rows
+|   |   `-- chemical_repair_text_dataset_cn.csv   # Full CSV cleaned and augmented from a Kaggle public enterprise dataset, about 220,000 rows
 |   |-- raw/                                      # Local raw TXT/TSV source files, not uploaded by default
 |   `-- samples/
 |       `-- sample_repair_text.csv                # Small public sample for quick smoke tests
@@ -347,7 +347,7 @@ industrial-fault-text-classifier/
 
 ---
 
-## 0x08. Value And Next Steps
+## 0x08. Project Value and Next Steps
 
 The core value of this project is to convert equipment repair text into structured labels, creating an automation foundation for maintenance dispatch, risk classification, and fault statistics. Compared with single-task classification, the multi-task design can share textual semantics while jointly modeling the relationship among fault symptoms, downtime risk, and responsible departments.
 
