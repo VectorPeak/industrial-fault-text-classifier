@@ -1,8 +1,8 @@
 <div align="center">
 
-# Industrial Fault Text Classifier | 制造业设备报修文本多任务分类系统
+# Industrial Fault Text Classifier | 化工业设备报修文本多任务分类系统
 
-面向制造业报修文本的故障大类、停机风险等级与处理部门多任务分类方案
+面向化工业报修文本的故障大类、停机风险等级与处理部门多任务分类方案
 
 ![python](https://img.shields.io/badge/python-3.10+-3776AB)
 ![pytorch](https://img.shields.io/badge/PyTorch-optional--BERT-EE4C2C)
@@ -22,7 +22,7 @@ repair text -> label mapping -> data quality check -> stratified split -> multi-
 
 ## 0x01. 项目背景
 
-制造业现场的报修记录、点检记录和维修工单通常以自然语言文本形式存在，文本中同时包含设备、部件、故障现象、风险程度和建议处理方向。传统处理方式依赖调度人员阅读文本后手工分派，容易受到表达不规范、经验差异和高风险工单堆积的影响。
+化工业现场的报修记录、点检记录和维修工单通常以自然语言文本形式存在，文本中同时包含设备、部件、故障现象、风险程度和建议处理方向。传统处理方式依赖调度人员阅读文本后手工分派，容易受到表达不规范、经验差异和高风险工单堆积的影响。
 
 本项目将单条报修文本转换为三个结构化判断结果：
 
