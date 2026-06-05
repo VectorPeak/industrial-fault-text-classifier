@@ -119,7 +119,57 @@ Step 5: Evaluation and inference
 
 ---
 
-## 0x05. Usage
+## 0x05. Final Value And Deployment Scenarios
+
+### 5.1 Offline Evaluation Scope
+
+This project is evaluated as a multi-task industrial dispatch pipeline, not as a single accuracy benchmark. The default `industrial-fault-go` command uses a small public sample for smoke testing and engineering verification. Formal performance should be re-evaluated on authorized, anonymized enterprise work-order data after label consistency and data quality audits.
+
+| Evaluation Target | Key Metrics | Value Interpretation |
+|------|------|------|
+| Fault category classification | accuracy, macro-F1, class-level confusion statistics | Measures whether the model can distinguish major chemical-industry fault categories such as mechanical, electrical, instrumentation, process, and safety-related issues |
+| Downtime risk level | P0/P1 recall, macro-F1, risk-level confusion statistics | Prioritizes high-risk ticket recall because missing P0/P1 work orders is more costly than ordinary misclassification |
+| Responsible department recommendation | department accuracy, department confusion matrix | Measures whether the model can reduce dispatch delay and cross-department rerouting |
+| Three-task joint output | three-task exact match, combined-label distribution stability | Evaluates whether fault category, risk level, and department can be predicted correctly as one end-to-end dispatch decision |
+
+### 5.2 Business Value
+
+From manual ticket reading to structured pre-dispatch:
+
+1. Convert unstructured repair text into standardized labels and reduce dependence on individual experience during initial triage.
+2. Surface P0/P1 high-risk work orders early so dispatchers can prioritize events that may affect safety, downtime, or production continuity.
+3. Turn historical repair records into analyzable data assets for fault statistics, department workload analysis, and equipment weakness profiling.
+4. Provide a recommended responsible department when a ticket is created, reducing repeated rerouting and communication overhead.
+
+### 5.3 Deployment Scenarios
+
+Work-order assisted dispatch:
+
+Integrate with EAM, CMMS, or enterprise maintenance-ticket systems. After a repair ticket is submitted, the model returns fault category, risk level, and recommended department. Low-confidence samples can be routed to human review, while high-confidence outputs can be shown as dispatch suggestions.
+
+High-risk ticket queue:
+
+Write predicted P0/P1 results into the ticket-priority field and build a high-risk repair queue. Dispatchers can filter by risk level, fault category, and responsible department so critical tickets are not buried in ordinary repair requests.
+
+Fault knowledge accumulation:
+
+Continuously analyze relationships among fault category, equipment object, department, and risk level to build a text-based fault profile for equipment management. The same foundation can later support keyword extraction, equipment entity recognition, and maintenance knowledge-base construction.
+
+Human-in-the-loop labeling:
+
+Route low-confidence predictions, inconsistent three-task outputs, and high-risk misclassifications to manual review. Corrected samples can be fed back into the training set to improve label consistency and adapt the model to enterprise-specific language patterns.
+
+### 5.4 Next Evolution
+
+1. Add authorized and anonymized real enterprise work-order samples and build a validation set closer to production usage.
+2. Improve risk-level annotation rules, especially for P0/P1 high-risk recall.
+3. Add confusion matrices, confidence distribution analysis, and low-confidence sample review to locate misclassification boundaries.
+4. Compare MacBERT, RoBERTa-wwm-ext, and other Chinese pretrained models, including full fine-tuning, frozen-encoder training, and lightweight distillation.
+5. Build a low-confidence human review and active-learning loop so corrected samples can continuously return to the training data.
+
+---
+
+## 0x06. Usage
 
 Install the local package:
 
@@ -147,14 +197,14 @@ python scripts\step5_evaluate_and_predict.py predict --model-dir artifacts\model
 To rebuild the full CSV from a local raw TXT/TSV source, run:
 
 ```powershell
-python scripts\step1_convert_to_csv.py --input data\raw\manufacturing_repair_text_dataset_cn.txt --output data\full\chemical_repair_text_dataset_cn.csv
+python scripts\step1_convert_to_csv.py --input data\raw\chemical_repair_text_dataset_cn.txt --output data\full\chemical_repair_text_dataset_cn.csv
 ```
 
 The public `industrial-fault-go`, Step 5 evaluation, and single-text prediction workflow currently use the `naive_bayes` backend so the pipeline can run without GPU or local pretrained-model cache. The BERT backend keeps the Step 4 training entry; unified evaluation and inference can be connected after the model artifact format is finalized.
 
 ---
 
-## 0x06. Project Structure
+## 0x07. Project Structure
 
 ```text
 industrial-fault-text-classifier/
@@ -175,14 +225,6 @@ industrial-fault-text-classifier/
 
 ---
 
-## 0x07. Value And Next Steps
+## 0x08. Version Notes
 
-The project turns unstructured repair text into structured labels, creating a foundation for dispatch support, risk prioritization, and fault statistics. Compared with single-task classification, the multi-task design shares textual semantics and captures the relationship between fault symptoms, downtime risk, and responsible departments.
-
-Future work:
-
-1. Add authorized and anonymized real enterprise work-order samples.
-2. Improve risk-level annotation rules, especially for P0/P1 recall.
-3. Add confusion-matrix analysis for department misrouting.
-4. Compare MacBERT, RoBERTa-wwm-ext, and other Chinese pretrained models.
-5. Add a low-confidence human review loop and feed corrected samples back into training.
+The current version focuses on repository restructuring, public CSV consolidation, step-based scripts, the baseline training loop, and README documentation. The BERT multi-task training entry is retained. A complete BERT evaluation and inference workflow can be connected after the model artifact format, evaluation interface, and serving interface are finalized.
