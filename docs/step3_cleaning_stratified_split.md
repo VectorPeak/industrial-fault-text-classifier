@@ -8,7 +8,7 @@
 
 | 项目 | 路径示例 | 说明 |
 |------|----------|------|
-| 输入 | `data/processed/standard_dataset.csv` | Step 1 输出 |
+| 输入 | `data/full/chemical_repair_text_dataset_cn.csv` | 已提交的全量 CSV |
 | 输出数据 | `data/processed/splits/*.csv` | 训练、验证、测试切分 |
 | 标签映射 | `data/processed/labels.json` | 当前数据集的 label schema |
 | 报告 | `artifacts/reports/split_report.json` | 清洗与切分统计 |
@@ -27,10 +27,9 @@
 ## 0x04. 运行命令
 
 ```powershell
-python scripts\step3_clean_and_split.py --input data\processed\standard_dataset.csv --output-dir data\processed\splits --labels data\processed\labels.json --report artifacts\reports\split_report.json
+python scripts\step3_clean_and_split.py --input data\full\chemical_repair_text_dataset_cn.csv --output-dir data\processed\splits --labels data\processed\labels.json --report artifacts\reports\split_report.json
 ```
 
 ## 0x05. 产物
 
 切分数据和标签映射会写入 `data/processed/`。模型训练时应使用同一份 `labels.json`，避免训练、评估和预测阶段标签 ID 不一致。
-

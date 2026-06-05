@@ -8,7 +8,7 @@
 
 | 项目 | 路径示例 | 说明 |
 |------|----------|------|
-| 输入 | `data/processed/standard_dataset.csv` | Step 1 输出 |
+| 输入 | `data/full/chemical_repair_text_dataset_cn.csv` | 已提交的全量 CSV |
 | 输出 | `artifacts/reports/eda_report.json` | 数据探索报告 |
 
 ## 0x03. 核心检查项
@@ -24,10 +24,9 @@
 ## 0x04. 运行命令
 
 ```powershell
-python scripts\step2_dataset_eda.py --input data\processed\standard_dataset.csv --report artifacts\reports\eda_report.json
+python scripts\step2_dataset_eda.py --input data\full\chemical_repair_text_dataset_cn.csv --report artifacts\reports\eda_report.json
 ```
 
 ## 0x05. 产物
 
 EDA 报告采用 JSON 格式，方便后续脚本或可视化工具继续读取。报告目录默认不提交。
-

@@ -1,6 +1,6 @@
 {
   "seed": 42,
-  "input_path": "data/raw/manufacturing_repair_text_dataset_cn.txt",
+  "input_path": "data/full/chemical_repair_text_dataset_cn.csv",
   "standard_dataset_path": "data/processed/standard_dataset.csv",
   "split_dir": "data/processed/splits",
   "label_schema_path": "configs/labels.json",
@@ -30,4 +30,3 @@
     }
   }
 }
-

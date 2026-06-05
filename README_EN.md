@@ -1,8 +1,8 @@
 <div align="center">
 
-# Industrial Fault Text Classifier | Manufacturing Repair Text Multi-Task Classification System
+# Industrial Fault Text Classifier | Chemical Industry Repair Text Multi-Task Classification System
 
-A multi-task classification pipeline for fault category, downtime risk level, and responsible department prediction from manufacturing repair text.
+A multi-task classification pipeline for fault category, downtime risk level, and responsible department prediction from chemical-industry repair text.
 
 ![python](https://img.shields.io/badge/python-3.10+-3776AB)
 ![pytorch](https://img.shields.io/badge/PyTorch-optional--BERT-EE4C2C)
@@ -18,11 +18,11 @@ A multi-task classification pipeline for fault category, downtime risk level, an
 repair text -> label mapping -> data quality check -> stratified split -> multi-task classifier -> evaluation -> inference demo
 ```
 
-> The public data in this repository is constructed/sample data for reproducing the experimental workflow. It does not contain real enterprise work orders, equipment identifiers, personnel information, or sensitive site records. In an enterprise deployment, real repair records and intermediate data artifacts should follow internal data security requirements and should not be published in a public repository.
+> The public data in this repository is constructed data for reproducing the experimental workflow. It does not contain real enterprise work orders, equipment identifiers, personnel information, or sensitive site records. In an enterprise deployment, real repair records and intermediate data artifacts should follow internal data security requirements and should not be published in a public repository.
 
 ## 0x01. Project Background
 
-Manufacturing repair records, inspection notes, and maintenance work orders are often written as natural language text. A single record may contain equipment, components, symptoms, risk level, and routing information. Manual dispatch depends on people reading the text and assigning the work order, which can be affected by inconsistent wording, experience gaps, and high-risk tickets being buried in ordinary queues.
+Chemical-industry repair records, inspection notes, and maintenance work orders are often written as natural language text. A single record may contain equipment, components, symptoms, risk level, and routing information. Manual dispatch depends on people reading the text and assigning the work order, which can be affected by inconsistent wording, experience gaps, and high-risk tickets being buried in ordinary queues.
 
 This project converts one repair text into three structured outputs:
 
@@ -38,13 +38,14 @@ The system is positioned as a decision-support pipeline, not as a replacement fo
 
 ## 0x02. Dataset And Label Schema
 
-Only a small public sample is committed:
+The repository now commits the full constructed dataset CSV and keeps a small sample for smoke tests:
 
 ```text
+data/full/chemical_repair_text_dataset_cn.csv
 data/samples/sample_repair_text.csv
 ```
 
-Full local datasets should be placed under `data/raw/`, which is ignored by Git. The standardized dataset schema is:
+The full CSV has about 220,000 rows and uses a headered standard CSV schema. `data/raw/` is reserved for local raw TXT/TSV source files and is ignored by Git. The standardized dataset schema is:
 
 | Field | Meaning |
 |-------|---------|
@@ -136,12 +137,17 @@ industrial-fault-go
 Run each step manually:
 
 ```powershell
-python scripts\step1_convert_to_csv.py --input data\raw\manufacturing_repair_text_dataset_cn.txt --output data\processed\standard_dataset.csv
-python scripts\step2_dataset_eda.py --input data\processed\standard_dataset.csv --report artifacts\reports\eda_report.json
-python scripts\step3_clean_and_split.py --input data\processed\standard_dataset.csv --output-dir data\processed\splits --labels data\processed\labels.json --report artifacts\reports\split_report.json
+python scripts\step2_dataset_eda.py --input data\full\chemical_repair_text_dataset_cn.csv --report artifacts\reports\eda_report.json
+python scripts\step3_clean_and_split.py --input data\full\chemical_repair_text_dataset_cn.csv --output-dir data\processed\splits --labels data\processed\labels.json --report artifacts\reports\split_report.json
 python scripts\step4_model_training.py --train data\processed\splits\train.csv --val data\processed\splits\val.csv --labels data\processed\labels.json --model-dir artifacts\models\baseline --backend naive_bayes --max-train-samples 2000
 python scripts\step5_evaluate_and_predict.py evaluate --model-dir artifacts\models\baseline --data data\processed\splits\test.csv --report artifacts\reports\eval_report.json --predictions artifacts\reports\predictions.csv
 python scripts\step5_evaluate_and_predict.py predict --model-dir artifacts\models\baseline --text "空压机运行中压力波动明显，主线节拍受到影响，请安排检修。"
+```
+
+To rebuild the full CSV from a local raw TXT/TSV source, run:
+
+```powershell
+python scripts\step1_convert_to_csv.py --input data\raw\manufacturing_repair_text_dataset_cn.txt --output data\full\chemical_repair_text_dataset_cn.csv
 ```
 
 The public `industrial-fault-go`, Step 5 evaluation, and single-text prediction workflow currently use the `naive_bayes` backend so the pipeline can run without GPU or local pretrained-model cache. The BERT backend keeps the Step 4 training entry; unified evaluation and inference can be connected after the model artifact format is finalized.
@@ -154,7 +160,9 @@ The public `industrial-fault-go`, Step 5 evaluation, and single-text prediction 
 industrial-fault-text-classifier/
 ├── configs/
 ├── data/
-│   ├── raw/                         # Local full datasets, ignored by Git
+│   ├── full/
+│   │   └── chemical_repair_text_dataset_cn.csv
+│   ├── raw/                         # Local raw source files, ignored by Git
 │   └── samples/
 ├── docs/
 ├── scripts/

@@ -18,11 +18,11 @@
 repair text -> label mapping -> data quality check -> stratified split -> multi-task classifier -> evaluation -> inference demo
 ```
 
-> 本仓库公开数据为用于复现实验流程的构造/样例数据，不包含企业真实生产工单、设备编号、人员信息或现场敏感信息。如项目在实际企业场景中落地，真实报修记录及中间数据产物应按企业数据安全要求处理，不在公开仓库中发布。
+> 本仓库公开数据为用于复现实验流程的构造数据，不包含企业真实生产工单、设备编号、人员信息或现场敏感信息。如项目在实际企业场景中落地，真实报修记录及中间数据产物应按企业数据安全要求处理，不在公开仓库中发布。
 
 ## 0x01. 项目背景
 
-化工业现场的报修记录、点检记录和维修工单通常以自然语言文本形式存在，文本中同时包含设备、部件、故障现象、风险程度和建议处理方向。传统处理方式依赖调度人员阅读文本后手工分派，容易受到表达不规范、经验差异和高风险工单堆积的影响。
+化工、制造等工业现场的报修记录、点检记录和维修工单通常以自然语言文本形式存在。一条工单文本中可能同时包含设备对象、部件位置、故障现象、异常程度、停机影响和建议处理方向，例如“压缩机轴承温度持续升高，伴随振动增大，需尽快安排机修检查”。传统处理方式主要依赖调度人员逐条阅读文本后进行人工识别与分派，容易受到文本表述不规范、人员经验差异、值守时段压力以及高风险工单集中出现等因素影响，进而造成故障类别判断不一致、响应优先级滞后或处理部门分派不准确。
 
 本项目将单条报修文本转换为三个结构化判断结果：
 
@@ -38,13 +38,14 @@ repair text -> label mapping -> data quality check -> stratified split -> multi-
 
 ## 0x02. 数据集与标签体系
 
-当前公开仓库只提交小规模样例数据：
+当前公开仓库提交全量构造数据 CSV，并保留小规模样例用于快速 smoke test：
 
 ```text
+data/full/chemical_repair_text_dataset_cn.csv
 data/samples/sample_repair_text.csv
 ```
 
-全量本地数据默认放置在 `data/raw/`，该目录已加入 `.gitignore`，不会随仓库上传。标准化后的数据字段如下：
+全量 CSV 约 22 万行，采用带表头的标准 CSV 格式。`data/raw/` 仅用于存放本地原始 TXT/TSV 来源文件，该目录已加入 `.gitignore`。标准化后的数据字段如下：
 
 | 字段 | 含义 |
 |------|------|
@@ -136,12 +137,17 @@ industrial-fault-go
 按步骤运行：
 
 ```powershell
-python scripts\step1_convert_to_csv.py --input data\raw\manufacturing_repair_text_dataset_cn.txt --output data\processed\standard_dataset.csv
-python scripts\step2_dataset_eda.py --input data\processed\standard_dataset.csv --report artifacts\reports\eda_report.json
-python scripts\step3_clean_and_split.py --input data\processed\standard_dataset.csv --output-dir data\processed\splits --labels data\processed\labels.json --report artifacts\reports\split_report.json
+python scripts\step2_dataset_eda.py --input data\full\chemical_repair_text_dataset_cn.csv --report artifacts\reports\eda_report.json
+python scripts\step3_clean_and_split.py --input data\full\chemical_repair_text_dataset_cn.csv --output-dir data\processed\splits --labels data\processed\labels.json --report artifacts\reports\split_report.json
 python scripts\step4_model_training.py --train data\processed\splits\train.csv --val data\processed\splits\val.csv --labels data\processed\labels.json --model-dir artifacts\models\baseline --backend naive_bayes --max-train-samples 2000
 python scripts\step5_evaluate_and_predict.py evaluate --model-dir artifacts\models\baseline --data data\processed\splits\test.csv --report artifacts\reports\eval_report.json --predictions artifacts\reports\predictions.csv
 python scripts\step5_evaluate_and_predict.py predict --model-dir artifacts\models\baseline --text "空压机运行中压力波动明显，主线节拍受到影响，请安排检修。"
+```
+
+如需从本地原始 TXT/TSV 重新生成全量 CSV，可运行：
+
+```powershell
+python scripts\step1_convert_to_csv.py --input data\raw\manufacturing_repair_text_dataset_cn.txt --output data\full\chemical_repair_text_dataset_cn.csv
 ```
 
 当前公开的 `industrial-fault-go`、Step 5 评估和单条预测闭环使用 `naive_bayes` 后端，便于在无 GPU 和无本地预训练模型缓存的环境中快速验证流程。BERT 后端已保留 Step 4 训练入口；统一评估与推理接口需在模型产物格式稳定后继续接入。
@@ -157,7 +163,9 @@ industrial-fault-text-classifier/
 │   └── train_config.json
 ├── data/
 │   ├── README.md
-│   ├── raw/                         # 本地全量数据，默认不上传
+│   ├── full/
+│   │   └── chemical_repair_text_dataset_cn.csv
+│   ├── raw/                         # 本地原始来源文件，默认不上传
 │   └── samples/
 │       └── sample_repair_text.csv    # 公开样例数据
 ├── docs/

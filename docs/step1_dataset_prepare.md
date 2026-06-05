@@ -8,8 +8,8 @@
 
 | 项目 | 路径示例 | 说明 |
 |------|----------|------|
-| 输入 | `data/raw/manufacturing_repair_text_dataset_cn.txt` | 本地全量原始数据，默认不提交 |
-| 输出 | `data/processed/standard_dataset.csv` | 带表头标准数据，默认不提交 |
+| 输入 | `data/raw/manufacturing_repair_text_dataset_cn.txt` | 本地原始 TXT/TSV 来源文件，默认不提交 |
+| 输出 | `data/full/chemical_repair_text_dataset_cn.csv` | 带表头全量 CSV，提交到公开仓库 |
 | 样例 | `data/samples/sample_repair_text.csv` | 公开样例数据 |
 
 标准字段为 `text`、`fault_category`、`risk_level`、`department`。
@@ -20,11 +20,13 @@
 
 ## 0x04. 运行命令
 
+仓库已经提交转换后的全量 CSV。如需从本地原始 TXT/TSV 重新生成，可运行：
+
 ```powershell
-python scripts\step1_convert_to_csv.py --input data\raw\manufacturing_repair_text_dataset_cn.txt --output data\processed\standard_dataset.csv
+python scripts\step1_convert_to_csv.py --input data\raw\manufacturing_repair_text_dataset_cn.txt --output data\full\chemical_repair_text_dataset_cn.csv
 ```
 
-只抽取前 N 行用于调试：
+只抽取前 N 行用于调试时，建议写入 `data/processed/`：
 
 ```powershell
 python scripts\step1_convert_to_csv.py --input data\raw\manufacturing_repair_text_dataset_cn.txt --output data\processed\debug_dataset.csv --sample-rows 1000
@@ -32,5 +34,4 @@ python scripts\step1_convert_to_csv.py --input data\raw\manufacturing_repair_tex
 
 ## 0x05. 产物
 
-输出文件进入 `data/processed/`，用于 Step 2 和 Step 3。该目录属于本地生成产物，不上传到公开仓库。
-
+全量 CSV 位于 `data/full/chemical_repair_text_dataset_cn.csv`，可直接用于 Step 2 和 Step 3。`data/processed/` 仍用于调试数据、切分结果和其他本地生成产物，不上传到公开仓库。
