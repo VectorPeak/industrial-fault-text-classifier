@@ -221,6 +221,16 @@ Step 5: 多任务评估与命令行推理
     └── 单条推理: 输入报修文本 -> 输出故障大类 / 风险等级 / 处理部门
 ```
 
+对应的分步骤技术文档如下：
+
+| 文档 | 主题 | 重点内容 |
+|------|------|----------|
+| [step1_dataset_prepare.md](docs/step1_dataset_prepare.md) | 数据标准化与 CSV 固化 | 原始 TXT/TSV/CSV 读取、四字段统一、样例数据生成 |
+| [step2_dataset_eda.md](docs/step2_dataset_eda.md) | EDA 与质量审计 | 标签分布、文本长度、组合标签、重复文本和泄漏短语检查 |
+| [step3_cleaning_stratified_split.md](docs/step3_cleaning_stratified_split.md) | 数据清洗与分层切分 | 空字段、重复样本、冲突标签处理，以及三任务组合分层 |
+| [step4_model_training.md](docs/step4_model_training.md) | 多任务模型训练 | 字符 n-gram baseline、BERT 共享编码器与三分类头 |
+| [step5_evaluation_inference.md](docs/step5_evaluation_inference.md) | 评估与推理 | accuracy、macro-F1、三任务全对率、混淆组合和单条预测 |
+
 ---
 
 ## 0x05. 最终价值与落地场景
@@ -351,4 +361,4 @@ baseline 的价值在于验证工程闭环：字符 n-gram Naive Bayes 不代表
 
 BERT 路线服务于正式语义建模：当接入经过授权和脱敏处理的真实企业工单后，可进一步比较 Chinese BERT、MacBERT、RoBERTa-wwm-ext 等预训练模型，并评估全量微调、冻结编码器和轻量化蒸馏方案。
 
-人机协同闭环比一次性训练更重要：低置信度样本、高风险误分样本和部门转派样本应进入人工复核，并将修正结果回流训练集。长期看，稳定的标注规范和持续反馈机制比单次模型训练更能决定落地效果。
+持续反馈机制比一次性训练更重要：低置信度样本、高风险误分样本和部门转派样本应进入人工复核，并将修正结果回流训练集。长期看，稳定的标注规范和反馈数据治理机制比单次模型训练更能决定落地效果。
