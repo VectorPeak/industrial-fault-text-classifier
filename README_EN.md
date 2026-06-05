@@ -239,12 +239,12 @@ The corresponding step-by-step technical documents are:
 
 This project maps one repair text into three structured results: fault category, downtime risk level, and responsible department. The following metrics come from the current multi-task BERT training result and describe the model's offline validation performance.
 
-| Prediction Target | Metric | Result | Value Interpretation |
-|-------------------|--------|-------:|----------------------|
-| Fault category | accuracy / macro-F1 | 92.40% / 92.42% | Stably distinguishes major fault types such as mechanical, electrical, instrumentation, process, and safety faults |
-| Downtime risk level | accuracy / macro-F1 | 85.84% / 86.09% | Helps identify P0/P1 high-risk work orders and provides model evidence for priority ranking |
-| Responsible department | accuracy / macro-F1 | 90.23% / 90.19% | Provides candidate recommendations for maintenance, automation, process, safety, and other departments |
-| Three-task overall | Average macro-F1 | 89.57% | Supports the joint prediction flow of fault identification, risk judgment, and department recommendation |
+| Prediction Target | Accuracy | Macro-F1 | Value Interpretation |
+|:-----------------:|:--------:|:--------:|----------------------|
+| Fault category | 92.40% | 92.42% | Stably distinguishes major fault types such as mechanical, electrical, instrumentation, process, and safety faults |
+| Downtime risk level | 85.84% | 86.09% | Helps identify P0/P1 high-risk work orders and provides model evidence for priority ranking |
+| Responsible department | 90.23% | 90.19% | Provides candidate recommendations for maintenance, automation, process, safety, and other departments |
+| Three-task overall | - | 89.57% | Supports the joint prediction flow of fault identification, risk judgment, and department recommendation |
 
 ### 5.2 Business Value
 
