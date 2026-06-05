@@ -1,4 +1,6 @@
-"""Command line interface for the repair text classification pipeline."""
+"""报修文本分类 Pipeline 的命令行接口。
+Command line interface for the repair text classification pipeline.
+"""
 
 from __future__ import annotations
 
@@ -14,21 +16,26 @@ from .training import train_model
 
 
 def build_parser() -> argparse.ArgumentParser:
-    """Build the top-level parser and all subcommands."""
+    """构建顶层参数解析器及所有子命令。
+    Build the top-level parser and all subcommands.
+    """
     parser = argparse.ArgumentParser(description="Industrial repair text multi-task classification pipeline.")
     subparsers = parser.add_subparsers(dest="command", required=True)
 
+    # Step 1：将原始四列数据统一为标准 CSV/TSV。
     # Step 1: normalize raw source data.
     convert = subparsers.add_parser("convert", help="Convert raw four-column repair text data to standard CSV/TSV.")
     convert.add_argument("--input", required=True)
     convert.add_argument("--output", required=True)
     convert.add_argument("--sample-rows", type=int, default=None)
 
-    # Step 2: inspect dataset quality and label distribution.
+    # Step 2：检查数据质量、文本长度、标签分布和疑似泄漏。
+    # Step 2: inspect dataset quality, text length, label distribution, and possible leakage.
     eda = subparsers.add_parser("eda", help="Generate dataset EDA report.")
     eda.add_argument("--input", required=True)
     eda.add_argument("--report", required=True)
 
+    # Step 3：清洗记录并生成可训练的 train/val/test 切分。
     # Step 3: clean records and create model-ready splits.
     split = subparsers.add_parser("split", help="Clean and stratify dataset.")
     split.add_argument("--input", required=True)
@@ -40,7 +47,8 @@ def build_parser() -> argparse.ArgumentParser:
     split.add_argument("--val-ratio", type=float, default=0.1)
     split.add_argument("--test-ratio", type=float, default=0.1)
 
-    # Step 4: train the selected backend.
+    # Step 4：训练用户选择的后端，默认使用轻量 baseline。
+    # Step 4: train the selected backend, using the lightweight baseline by default.
     train = subparsers.add_parser("train", help="Train baseline or BERT multi-task classifier.")
     train.add_argument("--train", required=True)
     train.add_argument("--val", required=True)
@@ -54,6 +62,7 @@ def build_parser() -> argparse.ArgumentParser:
     train.add_argument("--model-name", default="bert-base-chinese")
     train.add_argument("--max-length", type=int, default=96)
 
+    # Step 5：在测试集或指定数据集上评估已训练模型。
     # Step 5: evaluate a trained model on a dataset.
     evaluate = subparsers.add_parser("evaluate", help="Evaluate a trained model.")
     evaluate.add_argument("--model-dir", required=True)
@@ -62,17 +71,22 @@ def build_parser() -> argparse.ArgumentParser:
     evaluate.add_argument("--predictions", default=None)
     evaluate.add_argument("--max-samples", type=int, default=None)
 
+    # Step 5：对单条报修文本执行近似交互式预测。
     # Step 5: run one interactive-style prediction.
     predict = subparsers.add_parser("predict", help="Predict one repair text.")
     predict.add_argument("--model-dir", required=True)
     predict.add_argument("--text", default=DEFAULT_TEXT)
 
+    # go 命令用于快速验证公开样例闭环，不依赖 full 数据或 GPU。
+    # The go command validates the public-sample loop without requiring full data or GPU.
     subparsers.add_parser("go", help="Run a lightweight end-to-end smoke pipeline on the public sample.")
     return parser
 
 
 def main(argv: list[str] | None = None) -> None:
-    """Dispatch parsed CLI commands to the shared pipeline functions."""
+    """解析命令行参数，并分发到共享 Pipeline 函数。
+    Dispatch parsed CLI commands to the shared pipeline functions.
+    """
     args = build_parser().parse_args(argv)
     if args.command == "convert":
         result = convert_dataset(args.input, args.output, args.sample_rows)
@@ -112,11 +126,15 @@ def main(argv: list[str] | None = None) -> None:
         result = run_smoke_pipeline(project_root())
     else:
         raise ValueError(f"Unsupported command: {args.command}")
+    # CLI 统一输出 JSON，便于命令行阅读，也便于其他脚本解析。
+    # The CLI always prints JSON so humans can inspect it and scripts can parse it.
     print(json.dumps(result, ensure_ascii=False, indent=2))
 
 
 def main_go() -> None:
-    """Run the public-sample smoke pipeline registered as industrial-fault-go."""
+    """运行注册为 industrial-fault-go 的公开样例 smoke pipeline。
+    Run the public-sample smoke pipeline registered as industrial-fault-go.
+    """
     result = run_smoke_pipeline(project_root())
     print(json.dumps(result, ensure_ascii=False, indent=2))
 
