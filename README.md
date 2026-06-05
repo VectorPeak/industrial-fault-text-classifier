@@ -18,7 +18,7 @@
 repair text -> label mapping -> data quality check -> stratified split -> multi-task classifier -> evaluation -> inference demo
 ```
 
-> 本仓库公开数据为用于复现实验流程的构造数据，不包含企业真实生产工单、设备编号、人员信息或现场敏感信息。如项目在实际企业场景中落地，真实报修记录及中间数据产物应按企业数据安全要求处理，不在公开仓库中发布。
+> 本仓库公开数据为基于 Kaggle 公开数据集进行数据增强后的实验数据，用于复现项目流程与模型验证，不包含企业真实生产工单、设备编号、人员信息或现场敏感信息。如项目在实际企业场景中落地，真实报修记录及中间数据产物应按企业数据安全要求处理，不在公开仓库中发布。
 
 ## 0x01. 项目背景
 
@@ -38,7 +38,7 @@ repair text -> label mapping -> data quality check -> stratified split -> multi-
 
 ## 0x02. 数据集与标签体系
 
-当前公开仓库提交全量构造数据 CSV，并保留小规模样例用于快速 smoke test：
+当前公开仓库提交基于 Kaggle 公开数据集增强后的全量 CSV，并保留小规模样例用于快速 smoke test：
 
 ```text
 data/full/chemical_repair_text_dataset_cn.csv
@@ -88,33 +88,46 @@ fault_category head / risk_level head / department head
 ## 0x04. 技术架构与核心流程
 
 ```text
-原始报修文本数据
+原始报修文本数据 (4列: text / fault_category / risk_level / department)
     |
     v
-Step 1: 数据标准化
-    - 将四列原始 TXT/TSV 转换为带表头 CSV
-    - 校验字段数量、空字段和编码
+Step 1: 数据标准化与CSV固化
+    ├── 读取原始TXT/TSV四列数据，统一字段名与编码
+    ├── 校验字段数量、空字段、异常行和CSV转义
+    ├── 输出全量CSV: data/full/chemical_repair_text_dataset_cn.csv (220,000行)
+    └── 输出样例CSV: data/samples/sample_repair_text.csv (200行, 用于smoke test)
     |
     v
-Step 2: 数据探索分析
-    - 统计标签分布、文本长度、组合标签分布
-    - 检查重复文本、冲突标签和疑似泄漏短语
+Step 2: 数据探索分析与质量审计
+    ├── 统计三任务标签分布: 故障大类(10类) / 风险等级(4类) / 处理部门(10类)
+    ├── 统计文本长度分布: min / max / mean / p50 / p90 / p95
+    ├── 统计组合标签分布: fault_category + risk_level + department
+    ├── 检查重复文本、同文本多标签冲突和疑似标签泄漏短语
+    └── 输出报告: artifacts/reports/eda_report.json
     |
     v
-Step 3: 清洗与分层切分
-    - 删除空字段、完全重复行和同文本多标签冲突样本
-    - 生成 label schema
-    - 按组合标签切分 train / val / test
+Step 3: 数据清洗与分层切分
+    ├── 删除空字段样本、完全重复行和同文本多标签冲突样本
+    ├── 清洗结果: 220,000行 -> 219,160行
+    ├── 生成标签映射: data/processed/labels.json
+    ├── 按组合标签进行分层切分，保持三任务联合分布稳定
+    └── 输出切分: train(175,272) / val(21,852) / test(22,036)
     |
     v
-Step 4: 多任务模型训练
-    - baseline: 字符 n-gram Naive Bayes
-    - optional: BERT shared encoder + three classification heads
+Step 4: 多任务文本分类模型训练
+    ├── baseline: 字符n-gram特征 + 多任务Naive Bayes
+    ├── BERT: shared encoder + fault/risk/department三个分类头
+    ├── 微调策略: BERT encoder与分类头共同训练(全量微调)
+    ├── 训练配置: max_length / batch_size / learning_rate / loss_weights
+    └── 输出模型: artifacts/models/{backend}/model.pkl 或 model.pt
     |
     v
-Step 5: 评估与推理
-    - 输出三任务指标、P0/P1 召回和混淆统计
-    - 支持单条报修文本命令行预测
+Step 5: 多任务评估与命令行推理
+    ├── 评估指标: accuracy / macro-F1 / three-task exact match
+    ├── 风险指标: P0/P1高风险召回
+    ├── 错误分析: expected-predicted混淆组合统计
+    ├── 输出报告: artifacts/reports/eval_report.json + predictions.csv
+    └── 单条推理: 输入报修文本 -> 输出故障大类 / 风险等级 / 处理部门
 ```
 
 ---
@@ -165,7 +178,7 @@ industrial-fault-text-classifier/
 ├── data/                                         # 数据目录
 │   ├── README.md                                 # 数据目录说明
 │   ├── full/
-│   │   └── chemical_repair_text_dataset_cn.csv   # 全量构造数据 CSV，约 22 万行
+│   │   └── chemical_repair_text_dataset_cn.csv   # Kaggle 公开数据集增强后的全量 CSV，约 22 万行
 │   ├── raw/                                      # 本地原始 TXT/TSV 来源文件，默认不上传
 │   └── samples/
 │       └── sample_repair_text.csv                # 小规模公开样例，用于快速 smoke test
